@@ -24,35 +24,56 @@ export default function Home() {
     fetchProducts();
   }, []);
 
+  const deleteItem = async(slug)=>{
+
+    // immediately changes reflection of quantity in dropdown
+
+    let indexdrop = dropdown.findIndex((item) => item.slug == slug);
+    let newDropdown = [...dropdown]; // Clone the array to avoid mutating the original
+    newDropdown.splice(indexdrop, 1); // Remove the item at index 'indexdrop'
+    setDropdown(newDropdown); // Update your state with the modified array
+
+    // immediately changes reflection of quantity in dropdown
+    let index = products.findIndex((item) => item.slug == slug);
+    let newProducts = [...products];
+    newProducts.splice(index , 1);
+    setProducts(newProducts);
+
+
+    setLoadingAction(true);
+    const response = await fetch("/api/delete", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({slug}),
+    });
+    let r = await response.json();
+    console.log(r);
+    setLoadingAction(false);
+  }
+
   const buttonAction = async (action, slug, initialQuantity) => {
-    // immediately changes reflection of quantity
-    let index = products.findIndex((item)=> item.slug == slug)
-    let newProducts = JSON.parse(JSON.stringify(products))
-    if(action == "plus"){
-      
-      newProducts[index].quantity = parseInt(initialQuantity) +1;
+    // immediately changes reflection of quantity in table
+    let index = products.findIndex((item) => item.slug == slug);
+    let newProducts = JSON.parse(JSON.stringify(products));
+    if (action == "plus") {
+      newProducts[index].quantity = parseInt(initialQuantity) + 1;
+    } else {
+      newProducts[index].quantity = parseInt(initialQuantity) - 1;
     }
-    else{
-      newProducts[index].quantity = parseInt(initialQuantity) -1;
-      
+    setProducts(newProducts);
+
+    // immediately changes reflection of quantity in dropdown
+
+    let indexdrop = dropdown.findIndex((item) => item.slug == slug);
+    let newDropdown = JSON.parse(JSON.stringify(dropdown));
+    if (action == "plus") {
+      newDropdown[indexdrop].quantity = parseInt(initialQuantity) + 1;
+    } else {
+      newDropdown[indexdrop].quantity = parseInt(initialQuantity) - 1;
     }
-    setProducts(newProducts)
-    
-    
-    // immediately changes reflection of quantity
-
-    let indexdrop = dropdown.findIndex((item)=> item.slug == slug)
-    let newDropdown = JSON.parse(JSON.stringify(dropdown))
-    if(action == "plus"){
-
-      newDropdown[indexdrop].quantity = parseInt(initialQuantity) +1;
-    }
-    else{
-      newDropdown[indexdrop].quantity = parseInt(initialQuantity) -1;
-
-    }
-    setDropdown(newDropdown)
-
+    setDropdown(newDropdown);
 
     setLoadingAction(true);
     const response = await fetch("/api/action", {
@@ -66,21 +87,20 @@ export default function Home() {
     console.log(r);
     setLoadingAction(false);
   };
- 
+  
+  
   const dropDownEdit = async (e) => {
-
     let value = e.target.value;
     setQuery(value);
     if (value.length > 3) {
       setLoading(true);
-      setDropdown([])
+      setDropdown([]);
       const response = await fetch("/api/search?query=" + query);
       let rjson = await response.json();
       setDropdown(rjson.allProducts);
       setLoading(false);
-    }
-    else{
-      setDropdown([])
+    } else {
+      setDropdown([]);
     }
   };
   const handleAddProduct = async (e) => {
@@ -143,9 +163,9 @@ export default function Home() {
                   r="20"
                   strokeWidth="3"
                   stroke="#0a0a0a"
-                  stroke-dasharray="31.41592653589793 31.41592653589793"
+                  strokeDasharray="31.41592653589793 31.41592653589793"
                   fill="none"
-                  stroke-linecap="round"
+                  strokeLinecap="round"
                 >
                   <animateTransform
                     attributeName="transform"
@@ -162,10 +182,10 @@ export default function Home() {
                   r="16"
                   strokeWidth="3"
                   stroke="#28292f"
-                  stroke-dasharray="25.132741228718345 25.132741228718345"
+                  strokeDasharray="25.132741228718345 25.132741228718345"
                   strokeDashoffset="25.132741228718345"
                   fill="none"
-                  stroke-linecap="round"
+                  strokeLinecap="round"
                 >
                   <animateTransform
                     attributeName="transform"
@@ -190,6 +210,7 @@ export default function Home() {
                     {item.slug} ({item.quantity} available for ${item.price})
                   </span>
                   <div className="mx-5">
+                    <button onClick={() =>{deleteItem(item.slug)}}   disabled={loadingaction} className=" mx-1 subtract inline-block px-3 py-1 bg-red-500 text-white font-semibold text-xs rounded-lg shadow-md cursor-pointer disabled:bg-red-200">Delete</button>
                     <button
                       onClick={() => {
                         buttonAction("minus", item.slug, item.quantity);
